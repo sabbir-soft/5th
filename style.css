@@ -2480,7 +2480,7 @@ body:has(#intro-section.hidden) .hero-home-hint { display: inline-flex; animatio
 }
 .hero-sheet:active { transform: scale(0.992); }
 .hero-sheet { transition: min-height var(--t-slow) var(--ease-out), padding var(--t-slow) var(--ease-out), border-radius var(--t-slow) var(--ease-out), transform var(--t-fast) var(--ease-out), box-shadow var(--t-med) ease; }
-body:has(#intro-section.hidden) .hn-word { font-size: 13px; margin-top: 0.38em; padding-bottom: 0.2em; }
+body:has(#intro-section.hidden) .hn-word { font-size: 13px; margin-top: 0.38em; }
 body:has(#intro-section.hidden) .hero-copy { padding-right: 90px; }
 
 /* ── Accordion helpers ────────────────────────────────────────────────── */
@@ -2801,6 +2801,7 @@ body:has(#intro-section.hidden) .hero-copy { padding-right: 90px; }
     .neu-btn { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @media (prefers-reduced-motion: reduce) {
+    .hn-word::before, .hn-word::after { opacity: 1; animation: none; }
     .hn-word-text { animation: none; }
     .hn-underline path { stroke-dashoffset: 0; animation: none; }
 }
@@ -2865,6 +2866,36 @@ body:has(#intro-section.hidden) .hero-copy { padding-right: 90px; }
 .cm-item b { font-family: var(--f-ui); font-size: 17px; font-weight: 700; color: var(--jade-ink); font-variant-numeric: tabular-nums; }
 .cm-item.cm-wide { grid-column: 1 / -1; }
 .cm-item.cm-wide b { font-size: 16px; color: var(--ink); }
+
+/* ── সেমিস্টার: two corner marks frame the word like a viewfinder ──
+   they start wide apart and close in on the word, then rest */
+.hn-word {
+    position: relative;
+    display: inline-block;
+    padding: 0.16em 0.5em 0.2em;
+    background: none;
+}
+.hn-word .hn-underline { display: none; }
+.hn-word::before, .hn-word::after {
+    content: '';
+    position: absolute;
+    width: 0.5em;
+    height: 0.5em;
+    border: 0 solid var(--verm);
+    opacity: 0;
+    animation: cornerIn 520ms var(--ease-out) 1650ms forwards;
+}
+.hn-word::before { left: 0; top: 0; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 3px; --dx: -7px; --dy: -5px; }
+.hn-word::after  { right: 0; bottom: 0; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 3px; --dx: 7px; --dy: 5px; }
+@keyframes cornerIn {
+    from { opacity: 0; transform: translate(var(--dx), var(--dy)); }
+    to   { opacity: 1; transform: none; }
+}
+.hn-word-text { letter-spacing: 0.04em; }
+@keyframes wordIn {
+    from { opacity: 0; transform: translateY(6px); letter-spacing: 0.3em; filter: blur(3px); }
+    to   { opacity: 1; transform: none; letter-spacing: 0.04em; filter: none; }
+}
 
 @media (max-width: 640px) {
     .course-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }

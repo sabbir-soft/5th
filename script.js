@@ -81,6 +81,7 @@ function initializeApp() {
     initChartToggle();
 
     handleHashChange(true);
+    window.__appBooted = true;
 
     // Reveal intro section
     requestAnimationFrame(() => {
@@ -688,6 +689,7 @@ function showHomePage(fromRoute) {
     updateHashFromState();
     closeReadingBar();
     if (fromRoute !== true) window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.__appBooted) replayHeroRing();
 }
 
 // --------------------------------------------------------------------------
@@ -979,13 +981,28 @@ function closeReadingBar() {
     if (bar) { bar.classList.remove('show'); bar.setAttribute('aria-hidden', 'true'); }
 }
 
+// Re-draw the examiner's red ring around "ম" (each time the reader comes home)
+function replayHeroRing() {
+    const path = document.querySelector('.hn-ring path');
+    const suffix = document.querySelector('.hn-suffix');
+    if (!path || !path.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    replayHeroRing._a?.cancel(); replayHeroRing._b?.cancel();
+    replayHeroRing._a = path.animate(
+        [{ strokeDashoffset: 330 }, { strokeDashoffset: 0 }],
+        { duration: 900, delay: 40, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'backwards' });
+    replayHeroRing._b = suffix?.animate(
+        [{ transform: 'none' }, { transform: 'scale(.86) rotate(-6deg)', offset: .35 },
+         { transform: 'scale(1.08) rotate(3deg)', offset: .7 }, { transform: 'none' }],
+        { duration: 700, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+}
+
 // ── Hero sheet works as a home button ──
 function initHeroHome() {
     const hero = document.getElementById('hero-home');
     if (!hero) return;
     const go = () => {
         if (document.getElementById('intro-section').classList.contains('hidden')) showHomePage();
-        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        else { window.scrollTo({ top: 0, behavior: 'smooth' }); replayHeroRing(); }
     };
     hero.addEventListener('click', go);
     hero.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
