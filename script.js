@@ -767,8 +767,30 @@ function renderYearChips(years, active) {
     const act = box.querySelector('.year-chip.active');
     if (act) {
         const target = act.offsetLeft - (box.clientWidth - act.offsetWidth) / 2;
-        box.scrollTo({ left: Math.max(0, target), behavior: 'auto' });
+        box.scrollLeft = Math.max(0, target);
     }
+    initYearScroller();
+    requestAnimationFrame(updateYearArrows);
+}
+
+// Edge arrows appear only when there are more years in that direction
+function updateYearArrows() {
+    const box = document.getElementById('year-chips');
+    const wrap = box?.parentElement;
+    if (!box || !wrap) return;
+    const max = box.scrollWidth - box.clientWidth;
+    wrap.classList.toggle('can-prev', box.scrollLeft > 4);
+    wrap.classList.toggle('can-next', box.scrollLeft < max - 4);
+}
+function initYearScroller() {
+    const box = document.getElementById('year-chips');
+    if (!box || box.dataset.ready) return;
+    box.dataset.ready = '1';
+    box.addEventListener('scroll', () => requestAnimationFrame(updateYearArrows), { passive: true });
+    window.addEventListener('resize', updateYearArrows, { passive: true });
+    const wrap = box.parentElement;
+    wrap.querySelector('.ys-prev')?.addEventListener('click', () => box.scrollBy({ left: -box.clientWidth * 0.7, behavior: 'smooth' }));
+    wrap.querySelector('.ys-next')?.addEventListener('click', () => box.scrollBy({ left: box.clientWidth * 0.7, behavior: 'smooth' }));
 }
 
 function handleYearChange() {
@@ -1216,8 +1238,10 @@ function showMCQScoreUI(total) {
     mcqControls.classList.remove('hidden');
     mcqControls.style.display = 'flex';
     document.getElementById('mcq-progress-bar-wrap').classList.remove('hidden');
-    document.getElementById('mcq-score').textContent = '0';
-    document.getElementById('mcq-total').textContent = total;
+    document.getElementById('mcq-score').textContent = '০';
+    const totalEl = document.getElementById('mcq-total');
+    totalEl.textContent = toBengaliNum(total);
+    totalEl.dataset.n = total;
     document.getElementById('mcq-progress-bar').style.width = '0%';
     // Activate dynamic pill
     updatePillScore(0, total);
@@ -1235,11 +1259,11 @@ function hideMCQScoreUI() {
 }
 
 function updateMCQScore() {
-    const total = parseInt(document.getElementById('mcq-total').textContent || '0');
+    const total = parseInt(document.getElementById('mcq-total').dataset.n || '0');
     const answered = document.querySelectorAll('.mcq-card[data-answered]').length;
     const incorrect = document.querySelectorAll('.mcq-option.incorrect').length;
     const score = answered - incorrect;
-    document.getElementById('mcq-score').textContent = score;
+    document.getElementById('mcq-score').textContent = toBengaliNum(score);
 
     // Update progress bar
     const pct = total > 0 ? (answered / total) * 100 : 0;
@@ -1269,9 +1293,9 @@ function resetMCQAnswers() {
         const badge = card.querySelector('.mcq-badge');
         if (badge) badge.classList.remove('hov', 'ans-ok', 'ans-no', 'pulse');
     });
-    document.getElementById('mcq-score').textContent = '0';
+    document.getElementById('mcq-score').textContent = '০';
     document.getElementById('mcq-progress-bar').style.width = '0%';
-    const total = parseInt(document.getElementById('mcq-total').textContent || '0');
+    const total = parseInt(document.getElementById('mcq-total').dataset.n || '0');
     updatePillScore(0, total);
     showToast('✅ রিসেট হয়েছে', 'info');
 }
@@ -1323,7 +1347,7 @@ function revealAllAnswers() {
 
         // Update score: revealed cards count as correct (full score)
         const total = mcqCards.length;
-        document.getElementById('mcq-score').textContent = total;
+        document.getElementById('mcq-score').textContent = toBengaliNum(total);
         document.getElementById('mcq-progress-bar').style.width = '100%';
         updatePillScore(total, total);
         showToast('📖 সব সঠিক উত্তর দেখানো হয়েছে', 'success');
@@ -2548,6 +2572,8 @@ function createAnswerActions(target, idx) {
     // Print button
     const printBtn = document.createElement('button');
     printBtn.className = 'action-btn';
+    printBtn.dataset.act = 'print';
+    printBtn.setAttribute('aria-label', 'প্রিন্ট');
     printBtn.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>
         প্রিন্ট
@@ -2568,6 +2594,7 @@ function createAnswerActions(target, idx) {
 function createCollapseBtn() {
     const btn = document.createElement('button');
     btn.className = 'action-btn action-collapse';
+    btn.setAttribute('aria-label', 'বন্ধ করুন');
     btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg> বন্ধ করুন`;
     btn.onclick = (e) => {
         e.stopPropagation();

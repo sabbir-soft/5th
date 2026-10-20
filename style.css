@@ -3000,12 +3000,52 @@ body.dark .answer-content { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 /* ── Year chips: one tap switches the year (no native picker / "Done") ── */
 .filter-group.year-group { flex: 1 1 100%; min-width: 0; }
 #year-filter.neu-select { display: none; }
+.year-scroll-wrap { position: relative; flex: 1 1 auto; min-width: 0; }
+/* when an arrow shows, the strip steps aside so no chip ever sits under the arrow */
+.year-scroll-wrap .year-chips { transition: margin 260ms var(--ease-out); }
+.year-scroll-wrap.can-prev .year-chips { margin-left: 34px; }
+.year-scroll-wrap.can-next .year-chips { margin-right: 34px; }
 .year-chips {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
     min-width: 0;
+    padding: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
+.year-chips::-webkit-scrollbar { display: none; }
+.year-chip { scroll-snap-align: start; white-space: nowrap; }
+.ys-arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    width: 30px; height: 30px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--solid);
+    color: var(--jade-ink);
+    box-shadow: 0 4px 12px -4px rgba(8, 40, 38, 0.35);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) scale(0.8);
+    transition: opacity 200ms ease, transform 260ms var(--ease-out);
+    -webkit-tap-highlight-color: transparent;
+}
+.ys-prev { left: 0; }
+.ys-next { right: 0; }
+.year-scroll-wrap.can-prev .ys-prev,
+.year-scroll-wrap.can-next .ys-next { opacity: 1; pointer-events: auto; transform: translateY(-50%) scale(1); }
+.ys-arrow:active { transform: translateY(-50%) scale(0.9); }
 .year-chip {
     flex: 0 0 auto;
     min-height: 34px;
@@ -3041,9 +3081,7 @@ body.dark .answer-content { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 @media (max-width: 640px) {
     .filter-group.year-group { flex-basis: 100%; }
-    /* every year visible at once: an even grid, no scrolling, no fading */
-    .year-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; width: 100%; }
-    .year-chip { min-height: 38px; padding: 0 6px; }
+    .year-chip { min-height: 38px; padding: 0 15px; }
 }
 
 /* ── MCQ score pill (timer removed) ── */
@@ -3134,4 +3172,13 @@ html { scroll-behavior: smooth; }
         transition-duration: 1ms !important;
         scroll-behavior: auto !important;
     }
+}
+
+/* keep the last card clear of the floating score pill */
+@media (max-width: 640px) { #question-display { padding-bottom: 56px; } }
+/* very narrow phones: print + close become icons so the tray stays on one line */
+@media (max-width: 420px) {
+    .answer-actions .action-btn[data-act="print"] { width: 40px; padding: 0; justify-content: center; font-size: 0; gap: 0; }
+    .answer-actions .action-btn[data-act="print"] svg { width: 16px; height: 16px; }
+    .answer-content > .answer-actions { flex-wrap: nowrap; }
 }

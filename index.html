@@ -220,7 +220,11 @@
                         সাল:
                     </label>
                     <select id="year-filter" class="neu-select"></select>
-                    <div id="year-chips" class="year-chips" role="radiogroup" aria-label="সাল নির্বাচন করুন"></div>
+                    <div class="year-scroll-wrap">
+                        <button class="ys-arrow ys-prev" type="button" tabindex="-1" aria-label="আগের সালগুলো"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                        <div id="year-chips" class="year-chips" role="radiogroup" aria-label="সাল নির্বাচন করুন"></div>
+                        <button class="ys-arrow ys-next" type="button" tabindex="-1" aria-label="পরের সালগুলো"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                    </div>
                 </div>
 
                 <div class="filter-group">
