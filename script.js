@@ -830,6 +830,8 @@ function createWrittenAccordion(item, idx) {
         </div>
     `;
 
+    normalizeTables(header); wrapTables(header); captionGivenTables(header);
+
     const body = document.createElement('div');
     body.className = 'q-body';
 
@@ -1535,7 +1537,9 @@ function renderSyllabusContent(key, showTranslated = false) {
         }
     }
 
-    // Wrap tables
+    normalizeTables(content);
+    wrapTables(content);
+    // Wrap tables (legacy path — already wrapped above)
     content.querySelectorAll('table').forEach(table => {
         if (!table.parentNode.classList.contains('table-wrapper') && !table.parentNode.classList.contains('table-scroll-inner')) {
             const wrapper = document.createElement('div');
@@ -1695,6 +1699,7 @@ function renderBookmarksList() {
             </div>
         `;
 
+        normalizeTables(header); wrapTables(header); captionGivenTables(header);
         const body = document.createElement('div');
         body.className = 'q-body';
 
@@ -1839,8 +1844,100 @@ function formatQuestionText(text) {
     );
 }
 
-function sanitizeContent(element) {
-    element.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+// One clean, semantic look for every table, whatever markup the data carried
+const NUM_RE = /[০-৯0-9]/g;
+function cellIsNumeric(text) {
+    const t = (text || '').replace(/\s+/g, '');
+    if (!t) return null;
+    const digits = (t.match(NUM_RE) || []).length;
+    return digits / t.length >= 0.5;
+}
+
+// "Course Code | 230301 | Marks | 100 …" strips become a tidy info card
+function courseMetaFromTable(table) {
+    const first = (table.rows[0]?.cells[0]?.textContent || '').trim();
+    if (!/^Course\s*Code$/i.test(first)) return false;
+    const items = [];
+    [...table.rows].forEach(r => {
+        const cells = [...r.cells];
+        for (let i = 0; i + 1 < cells.length; i += 2) {
+            items.push({ k: cells[i].textContent.trim(), v: cells[i + 1].textContent.trim(), wide: cells[i + 1].colSpan > 1 });
+        }
+    });
+    if (!items.length) return false;
+    const box = document.createElement('div');
+    box.className = 'course-meta';
+    box.innerHTML = items.map(it => `<div class="cm-item${it.wide ? ' cm-wide' : ''}"><span>${it.k}</span><b>${it.v}</b></div>`).join('');
+    const par = table.parentElement;
+    if (par && par.tagName === 'DIV' && /overflow-x-auto/.test(par.className) && par.children.length === 1) par.replaceWith(box);
+    else table.replaceWith(box);
+    return true;
+}
+
+function normalizeTables(root) {
+    root.querySelectorAll('table').forEach(table => {
+        if (table.dataset.norm) return;
+        if (courseMetaFromTable(table)) return;
+        table.dataset.norm = '1';
+        const wasMath = table.classList.contains('math-table');
+
+        // unwrap old Tailwind scroll wrappers
+        const par = table.parentElement;
+        if (par && par.tagName === 'DIV' && /overflow-x-auto/.test(par.className) && par.children.length === 1) {
+            par.replaceWith(table);
+        }
+
+        // strip presentational attributes everywhere inside
+        [table, ...table.querySelectorAll('thead, tbody, tfoot, tr, th, td')].forEach(el => {
+            el.removeAttribute('class'); el.removeAttribute('style');
+            el.removeAttribute('border'); el.removeAttribute('width');
+            el.removeAttribute('cellpadding'); el.removeAttribute('cellspacing'); el.removeAttribute('align');
+        });
+        table.className = 'dt' + (wasMath ? ' dt-math' : '');
+
+        // promote a header row of <th> into <thead>
+        if (!table.tHead) {
+            const firstRow = table.rows[0];
+            if (firstRow && firstRow.cells.length && [...firstRow.cells].every(c => c.tagName === 'TH')) {
+                const thead = table.createTHead();
+                thead.appendChild(firstRow);
+            }
+        }
+
+        const bodyRows = [...table.querySelectorAll('tbody tr, :scope > tr')].filter(r => !r.closest('thead'));
+        const cols = Math.max(0, ...[...table.rows].map(r => r.cells.length));
+        table.classList.add('cols-' + Math.min(cols, 6));
+
+        // numeric columns → centred tabular figures; first text column → row label
+        for (let c = 0; c < cols; c++) {
+            let num = 0, txt = 0;
+            bodyRows.forEach(r => {
+                const v = cellIsNumeric(r.cells[c]?.textContent);
+                if (v === true) num++; else if (v === false) txt++;
+            });
+            const isNum = num > 0 && num >= txt * 2;
+            [...table.rows].forEach(r => {
+                const cell = r.cells[c];
+                if (!cell) return;
+                if (cell.colSpan > 1 && r.cells.length === 1) { r.classList.add('dt-section'); return; }
+                if (isNum && cellIsNumeric(cell.textContent) !== false) cell.classList.add('num');
+                else if (c === 0) cell.classList.add('lbl');
+            });
+        }
+
+        // a total / summary row at the end
+        const last = bodyRows[bodyRows.length - 1];
+        if (last && bodyRows.length > 1) {
+            const t = (last.cells[0]?.textContent || '').trim();
+            if (/^(মোট|সমষ্টি|যোগফল|যোগ|Total|Sum|Σ)/i.test(t) || /^(N\s*=|Σ)/.test(t) ||
+                [...last.cells].some(td => /^\s*(Σ|N\s*=)/.test(td.textContent))) {
+                last.classList.add('dt-total');
+            }
+        }
+    });
+}
+
+function wrapTables(element) {
     element.querySelectorAll('table').forEach(table => {
         // Outer wrapper: shadow ও border-radius এখানে
         if (!table.parentNode.classList.contains('table-wrapper')) {
@@ -1874,6 +1971,12 @@ function sanitizeContent(element) {
             window.addEventListener('resize', updateOverflowState, { passive: true });
         });
     });
+}
+
+function sanitizeContent(element) {
+    element.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+    normalizeTables(element);
+    wrapTables(element);
 }
 
 // --------------------------------------------------------------------------
@@ -2451,9 +2554,29 @@ function printQuestion(target) {
 // --------------------------------------------------------------------------
 // 20. Scroll Progress Bar
 // --------------------------------------------------------------------------
+// Label data tables that are part of a question ("প্রদত্ত তথ্য")
+function captionGivenTables(root) {
+    root.querySelectorAll('.table-wrapper').forEach(w => {
+        if (w.previousElementSibling?.classList.contains('given-cap')) return;
+        const t = w.querySelector('table');
+        const rows = t ? t.querySelectorAll('tbody tr:not(.dt-total)').length : 0;
+        const cap = document.createElement('div');
+        cap.className = 'given-cap';
+        cap.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span>প্রদত্ত তথ্য</span>${rows ? `<em>${toBengaliNum(rows)}টি সারি</em>` : ''}`;
+        w.parentNode.insertBefore(cap, w);
+    });
+}
+
 function initScrollProgressBar() {
     const bar = document.getElementById('scroll-progress-bar');
+    let lastY = window.scrollY;
     window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        // floating controls step aside while reading downwards, return on the way up
+        if (Math.abs(y - lastY) > 6) {
+            document.body.classList.toggle('scrolling-down', y > lastY && y > 240);
+            lastY = y;
+        }
         const scrolled = window.scrollY;
         const max = document.documentElement.scrollHeight - window.innerHeight;
         const pct = max > 0 ? (scrolled / max) * 100 : 0;

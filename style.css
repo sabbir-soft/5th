@@ -1,3 +1,221 @@
+/* Base reset (modern-normalize / Tailwind preflight, inlined so no runtime is needed) */
+*,
+::before,
+::after {
+  box-sizing: border-box; 
+  border-width: 0; 
+  border-style: solid; 
+  border-color: inherit; 
+}
+::before,
+::after {
+  --tw-content: '';
+}
+html,
+:host {
+  line-height: 1.5; 
+  -webkit-text-size-adjust: 100%; 
+  -moz-tab-size: 4; 
+  tab-size: 4; 
+  font-family: inherit; 
+  font-feature-settings: inherit; 
+  font-variation-settings: inherit; 
+  -webkit-tap-highlight-color: transparent; 
+}
+body {
+  margin: 0; 
+  line-height: inherit; 
+}
+hr {
+  height: 0; 
+  color: inherit; 
+  border-top-width: 1px; 
+}
+abbr:where([title]) {
+  text-decoration: underline dotted;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+b,
+strong {
+  font-weight: bolder;
+}
+code,
+kbd,
+samp,
+pre {
+  font-family: inherit; 
+  font-feature-settings: inherit; 
+  font-variation-settings: inherit; 
+  font-size: 1em; 
+}
+small {
+  font-size: 80%;
+}
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+sub {
+  bottom: -0.25em;
+}
+sup {
+  top: -0.5em;
+}
+table {
+  text-indent: 0; 
+  border-color: inherit; 
+  border-collapse: collapse; 
+}
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit; 
+  font-feature-settings: inherit; 
+  font-variation-settings: inherit; 
+  font-size: 100%; 
+  font-weight: inherit; 
+  line-height: inherit; 
+  letter-spacing: inherit; 
+  color: inherit; 
+  margin: 0; 
+  padding: 0; 
+}
+button,
+select {
+  text-transform: none;
+}
+button,
+input:where([type='button']),
+input:where([type='reset']),
+input:where([type='submit']) {
+  -webkit-appearance: button; 
+  background-color: transparent; 
+  background-image: none; 
+}
+:-moz-focusring {
+  outline: auto;
+}
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+progress {
+  vertical-align: baseline;
+}
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+[type='search'] {
+  -webkit-appearance: textfield; 
+  outline-offset: -2px; 
+}
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+::-webkit-file-upload-button {
+  -webkit-appearance: button; 
+  font: inherit; 
+}
+summary {
+  display: list-item;
+}
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+legend {
+  padding: 0;
+}
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+dialog {
+  padding: 0;
+}
+textarea {
+  resize: vertical;
+}
+input::placeholder,
+textarea::placeholder {
+  opacity: 1; 
+  color: inherit; 
+}
+button,
+[role="button"] {
+  cursor: pointer;
+}
+:disabled {
+  cursor: default;
+}
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block; 
+  vertical-align: middle; 
+}
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+[hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+.flex{display:flex}.flex-1{flex:1 1 0%}.text-left{text-align:left}.text-center{text-align:center}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-1{margin-bottom:.25rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.p-4{padding:1rem}.p-8{padding:2rem}.text-xs{font-size:.75rem;line-height:1rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-base{font-size:1rem;line-height:1.5rem}.font-bold{font-weight:700}.flex-wrap{flex-wrap:wrap}.flex-shrink-0{flex-shrink:0}.py-1{padding-top:.25rem;padding-bottom:.25rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-1{padding-left:.25rem;padding-right:.25rem}.hidden{display:none}
+
+/* ── Utilities actually used by the markup (replaces the Tailwind runtime) ── */
+.flex{display:flex}.flex-1{flex:1 1 0%}.flex-wrap{flex-wrap:wrap}.flex-shrink-0{flex-shrink:0}
+.items-center{align-items:center}.justify-between{justify-content:space-between}.justify-center{justify-content:center}
+.gap-2{gap:.5rem}.mb-1{margin-bottom:.25rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}
+.mx-4{margin-left:1rem;margin-right:1rem}.my-8{margin-top:2rem;margin-bottom:2rem}
+.p-4{padding:1rem}.p-8{padding:2rem}.px-1{padding-left:.25rem;padding-right:.25rem}.px-3{padding-left:.75rem;padding-right:.75rem}
+.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-4{padding-top:1rem;padding-bottom:1rem}
+.text-xs{font-size:.8125rem;line-height:1.35}.text-sm{font-size:.875rem;line-height:1.4}.text-base{font-size:1rem;line-height:1.5}
+.text-center{text-align:center}.text-left{text-align:left}.font-bold{font-weight:700}
+.hidden{display:none!important}
+@media (min-width:768px){.md\:p-5{padding:1.25rem}}
+
 /* ==========================================================================
    ৫ম সেমিস্টার প্রশ্নোত্তর সংকলন — Design System v6 "পদ্মার কুয়াশা"
    Frosted glass panes over a slow river-dawn colour field.
@@ -56,6 +274,15 @@
     --glass-edge:  rgba(255, 255, 255, 0.78);
     --paper:       rgba(255, 255, 255, 0.74);
     --solid:       #f6faf9;
+    --tbl-bg:      #fbfdfc;
+    --tbl-edge:    rgba(10, 70, 64, 0.14);
+    --tbl-head:    linear-gradient(180deg, #e6f3f0, #dcede9);
+    --tbl-head-rule: rgba(10, 127, 111, 0.35);
+    --tbl-rule:    rgba(14, 50, 48, 0.08);
+    --tbl-zebra:   rgba(10, 80, 72, 0.028);
+    --tbl-total:   #fbf1dc;
+    --tbl-total-rule: rgba(201, 134, 24, 0.45);
+    --tbl-shadow:  0 1px 0 rgba(255,255,255,0.9) inset, 0 1px 2px rgba(8, 40, 38, 0.05), 0 12px 30px -22px rgba(8, 40, 38, 0.45);
     --scrim:       rgba(10, 34, 38, 0.30);
 
     /* ink */
@@ -134,6 +361,15 @@ body.dark {
     --glass-edge:  rgba(255, 255, 255, 0.08);
     --paper:       rgba(8, 30, 34, 0.70);
     --solid:       #0b2327;
+    --tbl-bg:      #0e2a2e;
+    --tbl-edge:    rgba(140, 220, 205, 0.14);
+    --tbl-head:    linear-gradient(180deg, #13403f, #113735);
+    --tbl-head-rule: rgba(95, 217, 192, 0.35);
+    --tbl-rule:    rgba(200, 240, 232, 0.07);
+    --tbl-zebra:   rgba(200, 240, 232, 0.025);
+    --tbl-total:   rgba(230, 160, 60, 0.13);
+    --tbl-total-rule: rgba(230, 160, 60, 0.45);
+    --tbl-shadow:  0 1px 2px rgba(0,0,0,0.3), 0 14px 32px -22px rgba(0,0,0,0.8);
     --scrim:       rgba(0, 8, 10, 0.55);
 
     --ink:   #e3f0ed;
@@ -1231,11 +1467,11 @@ select.neu-select option { background: var(--solid); color: var(--ink); }
 .q-header:focus-visible { outline-offset: -3px; }
 .q-header strong { color: var(--jade-ink); font-weight: 700; }
 .q-header > .flex-1 { padding-top: 3px; min-width: 0; }
-.q-header table { margin-top: 10px; font-size: 14.5px; border-collapse: collapse; border-top: 1px solid var(--line-strong); }
-.q-header table tr + tr td, .q-header table tbody tr td { border-top: 1px solid var(--line); }
-.q-header table th, .q-header table td { padding: 3px 14px 3px 0; text-align: left; font-variant-numeric: tabular-nums; }
-.q-header table th { font-weight: 600; color: var(--ink-2); }
-.q-header table td { color: var(--ink-2); font-weight: 400; }
+.q-header .table-wrapper { margin: 14px 0 4px; cursor: auto; }
+.q-header table.dt { font-size: 14.5px; font-weight: 450; }
+.q-header .dt thead th { padding: 9px 18px 8px; font-size: 13px; }
+.q-header .dt td { padding: 7px 18px; color: var(--ink-2); }
+.q-header .dt td.lbl { color: var(--ink); }
 .q-num-badge {
     width: 34px;
     height: 34px;
@@ -1386,22 +1622,26 @@ select.neu-select option { background: var(--solid); color: var(--ink); }
 }
 .answer-content sub, .answer-content sup { line-height: 0; }
 
-/* tables */
+/* tables — one design for every table (question, answer, notes, syllabus) */
 .table-wrapper {
     position: relative;
-    margin: 1em 0 1.2em;
-    border-radius: var(--r-md);
-    border: 1px solid var(--line-strong);
-    background: var(--solid);
+    width: fit-content;
+    max-width: 100%;
+    margin: 16px 0 20px;
+    border-radius: 16px;
+    border: 1px solid var(--tbl-edge);
+    background: var(--tbl-bg);
+    box-shadow: var(--tbl-shadow);
     overflow: hidden;
-    --fade: var(--solid);
+    isolation: isolate;
+    --fade: var(--tbl-bg);
 }
-.table-scroll-inner { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.table-scroll-inner { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: thin; }
 .table-wrapper::before, .table-wrapper::after {
     content: '';
     position: absolute;
     top: 0; bottom: 0;
-    width: 28px;
+    width: 32px;
     z-index: 2;
     pointer-events: none;
     opacity: 0;
@@ -1411,38 +1651,58 @@ select.neu-select option { background: var(--solid); color: var(--ink); }
 .table-wrapper::after  { left: 0;  background: linear-gradient(to right, var(--fade), transparent); }
 .table-wrapper.has-overflow::before { opacity: 1; }
 .table-wrapper.scrolled-right::after { opacity: 1; }
-.answer-content table, #syllabus-content table {
-    width: 100%;
-    border-collapse: collapse;
+
+table.dt {
+    min-width: 260px;
+    border-collapse: separate;
+    border-spacing: 0;
     font-family: var(--f-ui);
-    font-size: 15.5px;
-    line-height: 1.5;
+    font-size: 15px;
+    font-weight: 450;
+    line-height: 1.45;
     font-variant-numeric: tabular-nums;
-}
-.answer-content th, #syllabus-content th {
-    padding: 11px 14px;
-    text-align: left;
-    vertical-align: bottom;
-    background: var(--jade-soft);
-    color: var(--jade-ink);
-    font-weight: 600;
-    white-space: nowrap;
-    border-bottom: 1.5px solid color-mix(in srgb, var(--jade) 45%, transparent);
-}
-.answer-content td, #syllabus-content td {
-    padding: 9px 14px;
     color: var(--ink);
-    vertical-align: top;
-    border-bottom: 1px solid var(--line);
+    text-align: left;
 }
-.answer-content tbody tr:last-child td, #syllabus-content tbody tr:last-child td { border-bottom: 0; }
-.answer-content tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--ink) 2.5%, transparent); }
-.answer-content td:first-child { font-weight: 500; }
-@media (hover: hover) { .answer-content tbody tr:hover td { background: var(--jade-soft); } }
-/* totals row in worked solutions */
-.math-table tbody tr:last-child td { border-top: 1.5px solid var(--line-strong); background: var(--saffron-soft); }
-.math-table td, .math-table th { text-align: center; }
-.math-table th { text-transform: none; }
+.answer-content .table-wrapper:has(table.dt.cols-6),
+.answer-content .table-wrapper:has(table.dt.cols-5) { width: 100%; }
+.answer-content .table-wrapper:has(table.dt.cols-6) table.dt,
+.answer-content .table-wrapper:has(table.dt.cols-5) table.dt { width: 100%; }
+.dt thead th {
+    padding: 11px 20px 10px;
+    background: var(--tbl-head);
+    color: var(--jade-ink);
+    font-size: 13.5px;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    white-space: nowrap;
+    vertical-align: bottom;
+    border-bottom: 1.5px solid var(--tbl-head-rule);
+}
+.dt td {
+    padding: 9px 20px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--tbl-rule);
+    background: transparent;
+    transition: background-color 120ms ease;
+}
+.dt th + th, .dt td + td { border-left: 1px solid var(--tbl-rule); }
+.dt tbody tr:nth-child(even) td { background: var(--tbl-zebra); }
+.dt tbody tr:last-child td { border-bottom: 0; }
+.dt .num { text-align: center; white-space: nowrap; }
+.dt td.lbl { font-weight: 560; }
+.dt.dt-math td, .dt.dt-math th { text-align: center; }
+.dt tr.dt-total td {
+    background: var(--tbl-total) !important;
+    border-top: 1.5px solid var(--tbl-total-rule);
+    font-weight: 700;
+    color: var(--ink);
+}
+@media (hover: hover) and (pointer: fine) {
+    .dt tbody tr:not(.dt-total):hover td { background: var(--jade-soft); }
+}
+.answer-content .table-wrapper + p, .answer-content .table-wrapper + h4 { margin-top: 4px; }
 
 /* answer actions */
 .answer-actions {
@@ -2056,8 +2316,11 @@ body.fs-xlarge .answer-content h3 { font-size: 23px; }
     .answer-content::before { left: 14px; width: 4px; }
     .answer-content h3 { font-size: 18.5px; }
     .answer-actions { margin-left: -18px; }
-    .answer-content table { font-size: 14.5px; }
-    .answer-content th, .answer-content td { padding: 8px 10px; }
+    table.dt { font-size: 14.5px; min-width: 0; }
+    .dt thead th { padding: 9px 14px 8px; font-size: 13px; }
+    .dt td { padding: 8px 14px; }
+    .q-header .dt td { padding: 6px 14px; }
+    .q-header .dt thead th { padding: 8px 14px 7px; }
 
     .mcq-card { padding: 14px; }
     .mcq-q-header { gap: 10px; }
@@ -2541,6 +2804,134 @@ body:has(#intro-section.hidden) .hero-copy { padding-right: 90px; }
     .hn-word-text { animation: none; }
     .hn-underline path { stroke-dashoffset: 0; animation: none; }
 }
+/* ════════════════════════════════════════════════════════════════════════
+   v8 — tables & phone polish
+   ════════════════════════════════════════════════════════════════════════ */
+/* "প্রদত্ত তথ্য" caption above data that belongs to a question */
+.given-cap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 14px 0 0;
+    padding: 0 2px 7px;
+    font-family: var(--f-ui);
+    font-size: 12.5px;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    color: var(--jade);
+}
+.given-cap em {
+    margin-left: auto;
+    font-style: normal;
+    font-weight: 500;
+    color: var(--ink-3);
+}
+.q-header .given-cap + .table-wrapper { margin-top: 0; }
+.q-header .table-wrapper { max-width: 100%; }
+.q-header table.dt { min-width: 240px; }
+.q-header .dt thead th { text-align: center; }
+
+/* ranges like ৬৬–৬৮ and totals read best centred */
+.dt td.num, .dt th.num { text-align: center; }
+.dt td { word-break: normal; overflow-wrap: break-word; }
+.dt tr.dt-total td { white-space: nowrap; }
+.dt td:not(.num) { white-space: normal; }
+.dt thead th { line-height: 1.3; }
+
+.dt tr.dt-section td {
+    background: var(--jade-soft) !important;
+    color: var(--jade-ink);
+    font-weight: 650;
+    text-align: left;
+    white-space: normal;
+}
+.course-meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 16px 0 18px;
+}
+.cm-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--tbl-bg);
+    border: 1px solid var(--tbl-edge);
+    box-shadow: var(--tbl-shadow);
+}
+.cm-item span { font-family: var(--f-ui); font-size: 12px; font-weight: 600; letter-spacing: 0.03em; color: var(--ink-3); text-transform: uppercase; }
+.cm-item b { font-family: var(--f-ui); font-size: 17px; font-weight: 700; color: var(--jade-ink); font-variant-numeric: tabular-nums; }
+.cm-item.cm-wide { grid-column: 1 / -1; }
+.cm-item.cm-wide b { font-size: 16px; color: var(--ink); }
+
+@media (max-width: 640px) {
+    .course-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .q-header .q-chevron { display: none; }
+    .q-header > .flex-1 { min-height: 34px; }
+    .q-header.active { padding-bottom: 10px; }
+    .shortcut-desktop-only, #shortcut-help-btn { display: none !important; }
+
+    /* more room for reading */
+    main#content-area { padding-left: 10px; padding-right: 10px; }
+    .hero { padding-left: 10px; padding-right: 10px; }
+
+    /* question row: number | text | stacked actions */
+    .q-header {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) 38px;
+        align-items: start;
+        column-gap: 10px;
+        padding: 13px 8px 13px 12px;
+        font-size: 16px;
+        line-height: 1.62;
+        min-height: 0;
+    }
+    .q-header > .flex-1 { padding-top: 2px; }
+    .q-header > div:last-child {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px !important;
+    }
+    .q-num-badge { width: 28px; height: 28px; font-size: 13.5px; margin-top: 1px; }
+    .bookmark-btn { width: 38px; height: 38px; }
+    .q-chevron { width: 30px; height: 30px; }
+
+    /* question data: let the table use the full card width */
+    .q-header .given-cap { margin-left: -38px; margin-right: -48px; }
+    .q-header .table-wrapper { margin-left: -38px; margin-right: -48px; max-width: none; width: calc(100% + 86px); }
+    .q-header .table-wrapper table.dt { width: 100%; min-width: 0; }
+
+    .q-body.open { padding: 0 6px 6px; }
+    .q-body { padding: 0 6px; }
+    .answer-content { padding: 16px 12px 2px 26px; font-size: 16px; line-height: 1.85; }
+    .answer-content::before { left: 11px; width: 4px; }
+    .answer-actions { margin-left: -14px; }
+
+    /* compact, wrapping tables that fit a 360px screen */
+    table.dt { font-size: 14px; min-width: 0; }
+    .dt thead th { padding: 9px 8px 8px; font-size: 12.5px; white-space: normal; }
+    .dt td { padding: 8px 8px; }
+    .answer-content .table-wrapper,
+    #syllabus-content .table-wrapper { width: 100%; }
+    .answer-content .table-wrapper table.dt,
+    #syllabus-content .table-wrapper table.dt { width: 100%; }
+    .table-wrapper { border-radius: 12px; }
+
+    /* MCQ cards */
+    .mcq-card { padding: 14px 12px; }
+    .mcq-q-header { gap: 10px; margin-bottom: 12px; }
+    .mcq-option { padding-left: 10px; }
+
+    /* floating controls slide away while reading downwards */
+    #study-timer, #fab { transition: opacity 220ms ease, transform 320ms var(--ease-out), width var(--t-med) ease, height var(--t-med) ease; }
+    body.scrolling-down #study-timer { transform: translateY(calc(100% + 100px)); opacity: 0; pointer-events: none; }
+    body.scrolling-down #fab.fab-visible { transform: translateY(calc(100% + 100px)); opacity: 0; pointer-events: none; }
+    #study-timer { height: 38px; padding: 0 12px 0 11px; font-size: 14.5px; gap: 8px; }
+}
+
 @media print {
     #bottom-nav, #reading-bar, #share-backdrop, .hero-home-hint { display: none !important; }
 }
