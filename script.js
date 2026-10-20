@@ -716,6 +716,7 @@ function renderFilters() {
         yearFilter.appendChild(opt);
     });
     yearFilter.value = currentState.year;
+    renderYearChips(subjectData.years, currentState.year);
 
     const typeFilter = document.getElementById('type-filter');
     typeFilter.innerHTML = '';
@@ -738,6 +739,36 @@ function createTypeBtn(type, label, isActive) {
     btn.innerHTML = label;
     btn.onclick = () => handleTypeChange(type);
     return btn;
+}
+
+// One-tap year switcher (replaces the native <select>, which needs "Done" on some mobile browsers)
+function renderYearChips(years, active) {
+    const box = document.getElementById('year-chips');
+    if (!box) return;
+    box.innerHTML = '';
+    const newest = Math.max(...years.map(Number));
+    years.forEach(yr => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'year-chip' + (String(yr) === String(active) ? ' active' : '');
+        btn.setAttribute('role', 'radio');
+        btn.setAttribute('aria-checked', String(yr) === String(active) ? 'true' : 'false');
+        btn.dataset.year = yr;
+        btn.innerHTML = toBengaliNum(yr) + (Number(yr) === newest ? '<span class="yc-new" title="সর্বশেষ"></span>' : '');
+        btn.onclick = () => {
+            if (String(currentState.year) === String(yr)) return;
+            const sel = document.getElementById('year-filter');
+            sel.value = yr;
+            handleYearChange();
+        };
+        box.appendChild(btn);
+    });
+    // keep the active chip in view without moving the page
+    const act = box.querySelector('.year-chip.active');
+    if (act) {
+        const target = act.offsetLeft - (box.clientWidth - act.offsetWidth) / 2;
+        box.scrollTo({ left: Math.max(0, target), behavior: 'auto' });
+    }
 }
 
 function handleYearChange() {
@@ -2483,7 +2514,7 @@ function createAnswerActions(target, idx) {
     readBtn.className = `action-btn${isRead ? ' read-done' : ''}`;
     readBtn.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        ${isRead ? 'পড়া হয়েছে ✓' : 'পড়া হয়েছে'}
+        পড়া হয়েছে
     `;
     readBtn.onclick = (e) => {
         e.stopPropagation();
@@ -2495,7 +2526,7 @@ function createAnswerActions(target, idx) {
         } else {
             localStorage.setItem(readId, '1');
             readBtn.classList.add('read-done');
-            readBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> পড়া হয়েছে ✓`;
+            readBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> পড়া হয়েছে`;
             showToast('✅ পড়া হিসেবে চিহ্নিত হয়েছে!');
         }
         updateReadingProgress();
@@ -2746,6 +2777,11 @@ function updatePillScore(score, total) {
     const oldScore = pillScore.textContent;
     pillScore.textContent = score;
     pillTotal.textContent = total;
+    const prog = document.getElementById('pill-progress');
+    if (prog) {
+        const answered = document.querySelectorAll('.mcq-card[data-answered]').length;
+        prog.style.width = total > 0 ? Math.min(100, (answered / total) * 100) + '%' : '0%';
+    }
 
     if (String(score) !== oldScore && mcqActive) {
         // Flash animation on score change

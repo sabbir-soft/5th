@@ -2966,3 +2966,169 @@ body:has(#intro-section.hidden) .hero-copy { padding-right: 90px; }
 @media print {
     #bottom-nav, #reading-bar, #share-backdrop, .hero-home-hint { display: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v2 polish — answer sheet, year chips, always-visible MCQ score
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Answer sheet: a clean notebook page with a separate action tray ── */
+:root {
+    --sheet-foot: color-mix(in srgb, var(--bg) 45%, #ffffff);
+    --gutter-tint: rgba(214, 74, 98, 0.035);
+}
+body.dark {
+    --sheet-foot: color-mix(in srgb, var(--bg) 78%, #1c3d42);
+    --gutter-tint: rgba(255, 122, 142, 0.04);
+}
+.answer-content {
+    --pt: 22px; --pr: 24px; --pl: 48px; --mx: 22px;
+    padding: var(--pt) var(--pr) 0 var(--pl);
+    border-radius: 18px;
+    background:
+        linear-gradient(90deg, var(--gutter-tint) 0 calc(var(--mx) + 6px), transparent calc(var(--mx) + 6px)),
+        var(--paper);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 1px 2px rgba(8, 40, 38, 0.04);
+}
+body.dark .answer-content { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+/* double margin rule: fades in at the top, hidden under the tray at the bottom */
+.answer-content::before {
+    left: var(--mx);
+    top: 0; bottom: 0;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 28px);
+            mask-image: linear-gradient(180deg, transparent 0, #000 28px);
+    transform-origin: top;
+}
+/* the action tray sits on top of the margin rule, so the rule ends cleanly above it */
+.answer-content > .answer-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 22px calc(-1 * var(--pr)) 0 calc(-1 * var(--pl));
+    padding: 12px 16px calc(12px + 2px);
+    background: var(--sheet-foot);
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 17px 17px;
+}
+/* tiny "torn perforation" accent where the page meets the tray */
+.answer-content > .answer-actions::before {
+    content: '';
+    position: absolute;
+    left: 14px; right: 14px; top: -1px;
+    height: 1px;
+    background-image: linear-gradient(90deg, var(--line-strong) 50%, transparent 50%);
+    background-size: 8px 1px;
+    opacity: 0.9;
+}
+.answer-actions .action-btn {
+    background: var(--glass-2);
+    border-color: var(--line);
+    box-shadow: var(--hi);
+}
+.answer-actions .action-btn:hover { background: var(--glass-3); border-color: var(--jade); color: var(--jade-ink); }
+.answer-actions .action-btn.read-done {
+    background: var(--jade);
+    border-color: var(--jade);
+    color: var(--on-jade);
+}
+.answer-actions .action-collapse { margin-left: auto; }
+
+@media (max-width: 640px) {
+    .answer-content { --pt: 18px; --pr: 14px; --pl: 34px; --mx: 14px; font-size: 16px; line-height: 1.9; border-radius: 16px; }
+    .answer-content > .answer-actions { padding: 10px 10px 12px; gap: 6px; border-radius: 0 0 15px 15px; }
+    .answer-actions .action-btn { padding: 0 12px; font-size: 14px; }
+}
+@media (max-width: 420px) {
+    .answer-content { --pt: 16px; --pr: 12px; --pl: 28px; --mx: 11px; line-height: 1.85; }
+    .answer-content::before { width: 4px; }
+    /* collapse becomes a compact round icon so the three main actions fit in one row */
+    .answer-actions .action-collapse { width: 40px; padding: 0; justify-content: center; font-size: 0; gap: 0; }
+    .answer-actions .action-collapse svg { width: 16px; height: 16px; }
+}
+@media print {
+    .answer-content > .answer-actions { display: none !important; }
+}
+
+/* ── Year chips: one tap switches the year (no native picker / "Done") ── */
+.filter-group.year-group { flex: 1 1 320px; min-width: 0; }
+#year-filter.neu-select { display: none; }
+.year-chips {
+    display: flex;
+    gap: 6px;
+    min-width: 0;
+    padding: 3px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    border-radius: var(--pill);
+    background: var(--line);
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+            mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+}
+.year-chips::-webkit-scrollbar { display: none; }
+.year-chip {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    min-height: 34px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--pill);
+    background: transparent;
+    color: var(--ink-2);
+    font-family: var(--f-ui);
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color var(--t-fast) ease, color var(--t-fast) ease, box-shadow var(--t-med) ease, transform var(--t-fast) var(--ease-out);
+}
+.year-chip:hover { background: var(--glass-2); color: var(--ink); }
+.year-chip:active { transform: scale(0.95); }
+.year-chip.active {
+    background: var(--jade);
+    color: var(--on-jade);
+    box-shadow: 0 6px 14px -8px var(--jade);
+}
+.year-chip:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
+.year-chip .yc-new {
+    display: inline-block;
+    width: 6px; height: 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+    border-radius: 50%;
+    background: var(--saffron);
+}
+@media (max-width: 640px) {
+    .filter-group.year-group { flex-basis: 100%; }
+    .year-chip { min-height: 38px; padding: 0 15px; }
+}
+
+/* ── MCQ score never slides away while practising ── */
+#study-timer.show-score {
+    background: color-mix(in srgb, var(--jade) 12%, var(--glass-3));
+    border-color: color-mix(in srgb, var(--jade) 35%, var(--glass-edge));
+}
+body.scrolling-down #study-timer.show-score {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+}
+#score-panel .score-pill-progress {
+    width: 34px; height: 4px;
+    margin-left: 4px;
+    border-radius: var(--pill);
+    background: var(--line-strong);
+    overflow: hidden;
+}
+#score-panel .score-pill-progress i {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: var(--jade);
+    transition: width 360ms var(--ease-out);
+}
