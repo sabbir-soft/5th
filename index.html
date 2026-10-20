@@ -323,20 +323,11 @@
         </div>
     </div>
 
-    <!-- STUDY TIMER / DYNAMIC SCORE PILL -->
-    <div id="study-timer" title="ক্লিক করুন পজ/রিজিউম করতে · সোয়াইপ করে স্কোর/টাইমার বদলান">
-        <div class="timer-dot"></div>
-        <div id="timer-panel">
-            <span id="timer-display">00:00</span>
-        </div>
-        <div id="score-panel" aria-label="MCQ স্কোর">
-            <span class="score-pill-label">স্কোর</span>
-            <span class="score-pill-score" id="pill-score">0</span>
-            <span class="score-pill-sep">/</span>
-            <span class="score-pill-total" id="pill-total">0</span>
-            <span class="score-pill-progress" aria-hidden="true"><i id="pill-progress"></i></span>
-        </div>
-        <div class="timer-swipe-hint"></div>
+    <!-- MCQ SCORE PILL — appears only while practising MCQ -->
+    <button id="score-pill" type="button" aria-live="polite" aria-label="MCQ স্কোর · তালিকার শুরুতে যান">
+        <svg class="sp-ring" viewBox="0 0 36 36" aria-hidden="true"><circle class="sp-track" cx="18" cy="18" r="15"/><circle class="sp-bar" id="sp-bar" cx="18" cy="18" r="15" pathLength="100"/></svg>
+        <span class="sp-text"><b id="pill-score">০</b><span class="sp-sep">/</span><span id="pill-total">০</span></span>
+    </button>
     </div>
 
     <!-- SHARE SHEET (popover on desktop, bottom sheet on phones) -->

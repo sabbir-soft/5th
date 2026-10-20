@@ -2038,54 +2038,6 @@ table.dt {
     #fab.fab-peek svg { opacity: 1; }
 }
 
-#study-timer {
-    position: fixed;
-    right: 20px;
-    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    z-index: 500;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    height: 44px;
-    padding: 0 16px 0 14px;
-    border-radius: var(--pill);
-    border: 1px solid var(--glass-edge);
-    background: var(--glass-3);
-    color: var(--ink-2);
-    font-family: var(--f-ui);
-    font-size: 16px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
-    user-select: none;
-    touch-action: pan-y;
-    white-space: nowrap;
-    box-shadow: var(--hi), var(--shadow-lg);
-    -webkit-backdrop-filter: var(--blur);
-    backdrop-filter: var(--blur);
-    transition: transform var(--t-fast) var(--ease-out), color var(--t-fast) ease;
-}
-#study-timer:hover { color: var(--ink); }
-#study-timer:active { transform: scale(0.96); }
-#study-timer .timer-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--jade);
-    box-shadow: 0 0 0 0 var(--jade-tint);
-    animation: breathe 2.4s ease-in-out infinite;
-}
-#study-timer.paused .timer-dot { background: var(--saffron) !important; animation: none; }
-@keyframes breathe { 0%,100% { box-shadow: 0 0 0 0 var(--jade-tint); } 50% { box-shadow: 0 0 0 6px transparent; } }
-#timer-panel, #score-panel { display: flex; align-items: center; gap: 6px; }
-#score-panel { display: none; }
-#study-timer.show-score #timer-panel { display: none; }
-#study-timer.show-score #score-panel { display: flex; }
-.score-pill-label { font-size: 14px; font-weight: 500; color: var(--ink-3); }
-.score-pill-score { font-size: 18px; font-weight: 700; color: var(--jade-ink); }
-.score-pill-sep, .score-pill-total { color: var(--ink-3); font-weight: 500; }
-.score-pill-score.updated { animation: stamp 420ms var(--ease-spring); }
-.timer-swipe-hint { width: 3px; height: 14px; border-radius: var(--pill); background: var(--line-strong); }
-#study-timer.score-mode-entering { animation: popIn 380ms var(--ease-out); }
 @keyframes popIn { from { opacity: 0; transform: translateY(6px) scale(0.96); } to { opacity: 1; transform: none; } }
 
 /* ── Shortcut panel ───────────────────────────────────────────────────── */
@@ -2332,7 +2284,6 @@ body.fs-xlarge .answer-content h3 { font-size: 23px; }
     .syllabus-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     #fab { left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px; }
-    #study-timer { right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); height: 42px; }
     #toast-container { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
     #subject-picker-box { max-height: 82vh; }
     .subject-picker-overlay { align-items: flex-end; padding: 0; }
@@ -2370,7 +2321,7 @@ body.fs-xlarge .answer-content h3 { font-size: 23px; }
 
 /* ── Print ────────────────────────────────────────────────────────────── */
 @media print {
-    .bg-glow, #top-sticky-bar, #subject-nav, .mobile-syllabus, #fab, #study-timer, #scroll-progress-bar,
+    .bg-glow, #top-sticky-bar, #subject-nav, .mobile-syllabus, #fab, #score-pill, #scroll-progress-bar,
     .bookmark-btn, .answer-actions, #ctx-menu, #toast-container, .hero { display: none !important; }
     body { background: #fff !important; color: #000 !important; }
     .q-accordion, .mcq-card, .card { box-shadow: none !important; border: 1px solid #ccc !important; backdrop-filter: none !important; }
@@ -2765,7 +2716,6 @@ body:has(#intro-section.hidden) .hero-copy { padding-right: 90px; }
 
     main#content-area { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
     #fab { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
-    #study-timer { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
     #toast-container { bottom: calc(136px + env(safe-area-inset-bottom, 0px)); }
     footer { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important; }
     #subject-picker-box { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
@@ -2957,10 +2907,8 @@ body:has(#intro-section.hidden) .hero-copy { padding-right: 90px; }
     .mcq-option { padding-left: 10px; }
 
     /* floating controls slide away while reading downwards */
-    #study-timer, #fab { transition: opacity 220ms ease, transform 320ms var(--ease-out), width var(--t-med) ease, height var(--t-med) ease; }
-    body.scrolling-down #study-timer { transform: translateY(calc(100% + 100px)); opacity: 0; pointer-events: none; }
+    #fab { transition: opacity 220ms ease, transform 320ms var(--ease-out), width var(--t-med) ease, height var(--t-med) ease; }
     body.scrolling-down #fab.fab-visible { transform: translateY(calc(100% + 100px)); opacity: 0; pointer-events: none; }
-    #study-timer { height: 38px; padding: 0 12px 0 11px; font-size: 14.5px; gap: 8px; }
 }
 
 @media print {
@@ -2994,9 +2942,7 @@ body.dark .answer-content { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 .answer-content::before {
     left: var(--mx);
     top: 0; bottom: 0;
-    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 28px);
-            mask-image: linear-gradient(180deg, transparent 0, #000 28px);
-    transform-origin: top;
+    transform-origin: top center;
 }
 /* the action tray sits on top of the margin rule, so the rule ends cleanly above it */
 .answer-content > .answer-actions {
@@ -3052,31 +2998,21 @@ body.dark .answer-content { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* ── Year chips: one tap switches the year (no native picker / "Done") ── */
-.filter-group.year-group { flex: 1 1 320px; min-width: 0; }
+.filter-group.year-group { flex: 1 1 100%; min-width: 0; }
 #year-filter.neu-select { display: none; }
 .year-chips {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     min-width: 0;
-    padding: 3px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    border-radius: var(--pill);
-    background: var(--line);
-    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
-            mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
 }
-.year-chips::-webkit-scrollbar { display: none; }
 .year-chip {
     flex: 0 0 auto;
-    scroll-snap-align: center;
     min-height: 34px;
     padding: 0 14px;
-    border: 0;
+    border: 1px solid var(--line);
     border-radius: var(--pill);
-    background: transparent;
+    background: var(--glass-2);
     color: var(--ink-2);
     font-family: var(--f-ui);
     font-size: 15px;
@@ -3089,6 +3025,7 @@ body.dark .answer-content { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 .year-chip:hover { background: var(--glass-2); color: var(--ink); }
 .year-chip:active { transform: scale(0.95); }
 .year-chip.active {
+    border-color: var(--jade);
     background: var(--jade);
     color: var(--on-jade);
     box-shadow: 0 6px 14px -8px var(--jade);
@@ -3104,31 +3041,97 @@ body.dark .answer-content { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 @media (max-width: 640px) {
     .filter-group.year-group { flex-basis: 100%; }
-    .year-chip { min-height: 38px; padding: 0 15px; }
+    /* every year visible at once: an even grid, no scrolling, no fading */
+    .year-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; width: 100%; }
+    .year-chip { min-height: 38px; padding: 0 6px; }
 }
 
-/* ── MCQ score never slides away while practising ── */
-#study-timer.show-score {
-    background: color-mix(in srgb, var(--jade) 12%, var(--glass-3));
-    border-color: color-mix(in srgb, var(--jade) 35%, var(--glass-edge));
-}
-body.scrolling-down #study-timer.show-score {
-    transform: none;
-    opacity: 1;
-    pointer-events: auto;
-}
-#score-panel .score-pill-progress {
-    width: 34px; height: 4px;
-    margin-left: 4px;
+/* ── MCQ score pill (timer removed) ── */
+#score-pill {
+    position: fixed;
+    right: 18px;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    z-index: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 12px 0 6px;
     border-radius: var(--pill);
-    background: var(--line-strong);
-    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--jade) 28%, var(--glass-edge));
+    background: color-mix(in srgb, var(--jade) 9%, var(--glass-3));
+    color: var(--ink);
+    font-family: var(--f-ui);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    box-shadow: var(--hi), 0 10px 26px -14px rgba(8, 40, 38, 0.45);
+    -webkit-backdrop-filter: var(--blur);
+    backdrop-filter: var(--blur);
+    -webkit-tap-highlight-color: transparent;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(16px) scale(0.92);
+    transition: opacity 260ms ease, transform 420ms var(--ease-spring, cubic-bezier(.34,1.56,.64,1)), visibility 0s linear 420ms,
+                background-color 300ms ease, border-color 300ms ease;
 }
-#score-panel .score-pill-progress i {
-    display: block;
-    height: 100%;
-    width: 0;
-    border-radius: inherit;
-    background: var(--jade);
-    transition: width 360ms var(--ease-out);
+#score-pill.on {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    transition: opacity 260ms ease, transform 420ms var(--ease-spring, cubic-bezier(.34,1.56,.64,1)), visibility 0s,
+                background-color 300ms ease, border-color 300ms ease;
+}
+#score-pill:active { transform: scale(0.95); }
+#score-pill .sp-ring { width: 24px; height: 24px; transform: rotate(-90deg); flex-shrink: 0; }
+#score-pill .sp-track { fill: none; stroke: var(--line-strong); stroke-width: 4; }
+#score-pill .sp-bar {
+    fill: none;
+    stroke: var(--jade);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 0 100;
+    transition: stroke-dasharray 520ms var(--ease-out), stroke 300ms ease;
+}
+#score-pill .sp-text { display: inline-flex; align-items: baseline; gap: 2px; line-height: 1; }
+#score-pill #pill-score { font-size: 16px; font-weight: 700; color: var(--jade-ink); }
+#score-pill .sp-sep, #score-pill #pill-total { font-size: 13.5px; font-weight: 500; color: var(--ink-3); }
+#score-pill.tone-warn .sp-bar { stroke: var(--saffron); }
+#score-pill.tone-warn #pill-score { color: var(--saffron); }
+#score-pill.tone-bad .sp-bar { stroke: var(--verm); }
+#score-pill.tone-bad #pill-score { color: var(--verm); }
+#score-pill.complete { border-color: var(--jade); }
+#score-pill.bump #pill-score { animation: stamp 420ms var(--ease-spring, cubic-bezier(.34,1.56,.64,1)); }
+@media (max-width: 640px) {
+    #score-pill { right: 14px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+}
+@media print { #score-pill { display: none !important; } }
+
+/* ═══ Motion polish: one easing language, calmer and smoother ═══ */
+:root {
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+#question-display.qd-swap { animation: qdSwap 420ms var(--ease-out) both; }
+@keyframes qdSwap { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.q-body { transition: grid-template-rows 480ms var(--ease-out), opacity 320ms ease, padding 480ms var(--ease-out); }
+.q-body.open .answer-content::before { animation: marginDrop 720ms var(--ease-out) 60ms both; }
+.answer-content > .answer-actions { transition: opacity 300ms ease 120ms; }
+.q-body:not(.open) .answer-content > .answer-actions { opacity: 0; }
+.year-chip, #type-filter .neu-btn, .action-btn, .neu-btn {
+    transition-timing-function: var(--ease-out);
+}
+.year-chip.active { animation: chipIn 360ms var(--ease-spring) both; }
+@keyframes chipIn { from { transform: scale(0.92); } to { transform: none; } }
+.mcq-option { transition: background-color 220ms ease, border-color 220ms ease, color 220ms ease, transform 220ms var(--ease-out), box-shadow 260ms ease; }
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+        scroll-behavior: auto !important;
+    }
 }
