@@ -62,6 +62,9 @@ function initializeApp() {
     initStudyTimer();
     initKeyboardShortcuts();
     addRippleToButtons();
+    initReadingBar();
+    initHeroHome();
+    initBottomNav();
 
     document.getElementById('home-button').onclick = showHomePage;
     document.getElementById('year-filter').onchange = handleYearChange;
@@ -77,8 +80,7 @@ function initializeApp() {
     initFeatureCardHandlers();
     initChartToggle();
 
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange();
+    handleHashChange(true);
 
     // Reveal intro section
     requestAnimationFrame(() => {
@@ -154,7 +156,8 @@ function showSubjectPicker(title, subtitle, mode) {
     list.innerHTML = '';
 
     // Filter subjects that have MCQ/questions
-    const subjects = Object.keys(allData).filter(k => k !== 'syllabus' && !allData[k].isNoteCategory && allData[k].questions);
+    const subjects = Object.keys(allData).filter(k => k !== 'syllabus' &&
+        (mode === 'browse' ? (allData[k].questions || allData[k].isNoteCategory) : (!allData[k].isNoteCategory && allData[k].questions)));
 
     if (subjects.length === 0) {
         list.innerHTML = '<p class="text-center picker-empty-msg py-4">কোনো বিষয় পাওয়া যায়নি।</p>';
@@ -170,6 +173,13 @@ function showSubjectPicker(title, subtitle, mode) {
             return acc + (subj.questions[yr]?.mcq?.length || 0);
         }, 0);
         const years = subj.years || [];
+        const noteCount = subj.isNoteCategory ? Object.values(subj.subjects || {}).reduce((n, arr) => n + (arr?.length || 0), 0) : 0;
+        const writtenCount = Object.keys(subj.questions || {}).reduce((acc, yr) => acc + (subj.questions[yr]?.written?.length || 0), 0);
+        const meta = subj.isNoteCategory
+            ? `${toBengaliNum(noteCount)}টি নোট`
+            : (years.length > 0 ? toBengaliNum(years[years.length-1]) + '–' + toBengaliNum(years[0]) : '') +
+              (mode === 'browse' ? `, ${toBengaliNum(writtenCount)}টি লিখিত · ${toBengaliNum(totalMCQ)}টি MCQ` : (totalMCQ > 0 ? ', ' + toBengaliNum(totalMCQ) + 'টি MCQ' : ''));
+        if (mode === 'browse' && currentState.subject === key) btn.classList.add('is-current');
 
         btn.innerHTML = `
             <span class="picker-icon ${getSubjectColor(key)}">
@@ -177,13 +187,17 @@ function showSubjectPicker(title, subtitle, mode) {
             </span>
             <div class="picker-info">
                 <span class="picker-name">${subj.name}</span>
-                <span class="picker-meta">${years.length > 0 ? toBengaliNum(years[years.length-1]) + '–' + toBengaliNum(years[0]) : ''}${totalMCQ > 0 ? ', ' + toBengaliNum(totalMCQ) + 'টি MCQ' : ''}</span>
+                <span class="picker-meta">${meta}</span>
             </div>
             <svg class="picker-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
         `;
 
         btn.onclick = () => {
-            if (mode === 'chart') {
+            if (mode === 'browse') {
+                closeSubjectPicker();
+                selectSubject(key);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (mode === 'chart') {
                 closeSubjectPicker();
                 selectSubject(key);
                 setTimeout(() => {
@@ -203,12 +217,18 @@ function showSubjectPicker(title, subtitle, mode) {
 
     overlay.classList.remove('hidden');
     requestAnimationFrame(() => overlay.classList.add('open'));
+    document.documentElement.classList.add('sheet-lock');
+    Overlay.opened('picker', () => closeSubjectPicker(true));
 }
 
-function closeSubjectPicker() {
+function closeSubjectPicker(fromHistory) {
     const overlay = document.getElementById('subject-picker-overlay');
+    if (overlay.classList.contains('hidden')) return;
     overlay.classList.remove('open');
-    setTimeout(() => overlay.classList.add('hidden'), 300);
+    document.documentElement.classList.remove('sheet-lock');
+    clearTimeout(closeSubjectPicker._t);
+    closeSubjectPicker._t = setTimeout(() => { if (!overlay.classList.contains('open')) overlay.classList.add('hidden'); }, 300);
+    if (fromHistory !== true) Overlay.closedByUI('picker');
 }
 
 function showYearPicker(subjectKey, years, subjData) {
@@ -607,6 +627,11 @@ function selectSubject(key) {
     // Handle class notes category
     if (subjectData.isNoteCategory) {
         renderClassNoteFilters(subjectData);
+        const subs = subjectData.subjects || {};
+        const first = currentState.noteSubject && subs[currentState.noteSubject]
+            ? currentState.noteSubject
+            : (Object.keys(subs).find(k => (subs[k] || []).length) || Object.keys(subs)[0]);
+        if (first) selectNoteSubject(first); else updateHashFromState();
         return;
     }
 
@@ -653,7 +678,7 @@ function renderClassNoteFilters(subjectData) {
     }
 }
 
-function showHomePage() {
+function showHomePage(fromRoute) {
     hideAllSections();
     document.getElementById('intro-section').classList.remove('hidden');
     document.getElementById('intro-section').classList.add('is-visible');
@@ -661,6 +686,8 @@ function showHomePage() {
     document.querySelectorAll('#subject-nav button').forEach(btn => btn.classList.remove('active'));
     currentState = { subject: null, year: null, type: null, noteCategory: null, noteSubject: null, view: 'home' };
     updateHashFromState();
+    closeReadingBar();
+    if (fromRoute !== true) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // --------------------------------------------------------------------------
@@ -785,8 +812,11 @@ function createWrittenAccordion(item, idx) {
         qText: (item.q || '').replace(/<[^>]*>/g, '')
     };
 
-    const header = document.createElement('button');
+    const header = document.createElement('div');
     header.className = 'q-header';
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('aria-expanded', 'false');
     header.innerHTML = `
         <span class="q-num-badge">${isEnglishText((item.q || '').replace(/<[^>]*>/g, '')) ? idx + 1 : toBengaliNum(idx + 1)}</span>
         <span class="flex-1 text-left">${formatQuestionText(item.q)}</span>
@@ -820,6 +850,10 @@ function createWrittenAccordion(item, idx) {
         if (e.target.closest('.bookmark-btn')) return;
         toggleAccordion(header, body);
     });
+    header.addEventListener('keydown', (e) => {
+        if (e.target !== header) return;
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleAccordion(header, body); }
+    });
 
     // Attach long-press / right-click share on header
     attachShareHandlers(header, shareTarget);
@@ -830,49 +864,167 @@ function createWrittenAccordion(item, idx) {
     return wrap;
 }
 
-function toggleAccordion(header, body) {
+function getStickyOffset() {
+    const bar = document.getElementById('top-sticky-bar');
+    return (bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 60) + 10;
+}
+
+function scrollInstant(top) {
+    window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+}
+
+function setAccordionState(body, open) {
+    const header = body.previousElementSibling;
+    body.classList.toggle('open', open);
+    header?.classList.toggle('active', open);
+    header?.setAttribute('aria-expanded', String(open));
+    body.closest('.q-accordion')?.classList.toggle('is-open', open);
+}
+
+// Collapse without animation (used for the *other* open item, so nothing slides under the finger)
+function collapseInstantly(bodies) {
+    bodies.forEach(b => { b.classList.add('no-anim'); setAccordionState(b, false); });
+    void document.body.offsetHeight;
+    requestAnimationFrame(() => requestAnimationFrame(() => bodies.forEach(b => b.classList.remove('no-anim'))));
+}
+
+function toggleAccordion(header, body, opts = {}) {
     const isOpen = body.classList.contains('open');
     const accordion = header.closest('.q-accordion');
+    const container = accordion?.parentElement || document;
+    const others = Array.from(container.querySelectorAll('.q-body.open')).filter(b => b !== body);
+    const offset = getStickyOffset();
 
-    // Close all open accordions within the same parent container
-    const parentContainer = accordion?.parentElement || document;
-    parentContainer.querySelectorAll('.q-body.open').forEach(b => {
-        b.classList.remove('open');
-        b.previousElementSibling?.classList.remove('active');
-        b.closest('.q-accordion')?.classList.remove('is-open');
-    });
-
-    if (!isOpen) {
-        body.classList.add('open');
-        header.classList.add('active');
-        accordion?.classList.add('is-open');
-
-        const stickyH = (document.getElementById('top-sticky-bar')?.offsetHeight || 60) + 8;
-
-        const scrollIntoView = () => {
-            const rect = header.getBoundingClientRect();
-            if (rect.top < stickyH) {
-                // Header hidden above sticky bar — scroll it into view
-                window.scrollTo({
-                    top: window.scrollY + rect.top - stickyH,
-                    behavior: 'smooth'
-                });
-            } else if (rect.top > stickyH + 4) {
-                // Header is visible and below sticky bar — align gently to top
-                const target = window.scrollY + rect.top - stickyH - 4;
-                if (target < window.scrollY) {
-                    window.scrollTo({ top: target, behavior: 'smooth' });
-                }
-            }
-        };
-
-        // Single well-timed scroll after transition starts
-        requestAnimationFrame(() => {
-            scrollIntoView();
-            // Second pass for mobile where rAF fires before layout
-            setTimeout(scrollIntoView, 80);
-        });
+    // 1) Close the previously open answer instantly and keep the tapped question exactly under the finger
+    if (others.length) {
+        const before = header.getBoundingClientRect().top;
+        collapseInstantly(others);
+        const after = header.getBoundingClientRect().top;
+        if (Math.abs(after - before) > 1) scrollInstant(window.scrollY + (after - before));
     }
+
+    // 2) Closing this one
+    if (isOpen) {
+        const top = header.getBoundingClientRect().top;
+        if (top < offset) {
+            // reader is deep inside the answer — snap back to the question, then fold it
+            collapseInstantly([body]);
+            scrollInstant(window.scrollY + header.getBoundingClientRect().top - offset);
+        } else {
+            setAccordionState(body, false);
+        }
+        closeReadingBar();
+        return;
+    }
+
+    // 3) Opening — bring the question to the top so reading starts at line one
+    setAccordionState(body, true);
+    openAccordion = { header, body, accordion };
+    if (!opts.noScroll) {
+        const r = header.getBoundingClientRect();
+        const needs = r.top < offset || r.top > window.innerHeight * 0.32;
+        if (needs) window.scrollTo({ top: Math.max(0, window.scrollY + r.top - offset), behavior: 'smooth' });
+    }
+    updateReadingBar();
+}
+
+// ── Reading bar: a slim strip under the top bar while you read a long answer ──
+let openAccordion = null, rbTicking = false;
+
+function initReadingBar() {
+    const bar = document.getElementById('reading-bar');
+    if (!bar) return;
+    document.getElementById('rb-jump').addEventListener('click', () => {
+        if (!openAccordion) return;
+        const top = openAccordion.header.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    });
+    document.getElementById('rb-close').addEventListener('click', () => {
+        if (!openAccordion) return;
+        toggleAccordion(openAccordion.header, openAccordion.body);
+    });
+    window.addEventListener('scroll', () => {
+        if (rbTicking) return;
+        rbTicking = true;
+        requestAnimationFrame(() => { rbTicking = false; updateReadingBar(); });
+    }, { passive: true });
+}
+
+function updateReadingBar() {
+    const bar = document.getElementById('reading-bar');
+    if (!bar) return;
+    const o = openAccordion;
+    if (!o || !o.body.classList.contains('open') || !document.body.contains(o.header)) { closeReadingBar(); return; }
+    const offset = getStickyOffset();
+    const hRect = o.header.getBoundingClientRect();
+    const bRect = o.body.getBoundingClientRect();
+    const show = hRect.bottom < offset - 4 && bRect.bottom > offset + 90;
+    if (show && !bar.classList.contains('show')) {
+        const num = o.header.querySelector('.q-num-badge')?.textContent || '';
+        const tClone = o.header.querySelector('.flex-1')?.cloneNode(true);
+        tClone?.querySelectorAll('.note-meta, .bm-meta, table').forEach(n => n.remove());
+        const txt = (tClone?.textContent || '').replace(/\s+/g, ' ').replace(/^([০-৯\d]+)[।.)\s]+/, '').trim();
+        document.getElementById('rb-num').textContent = num;
+        document.getElementById('rb-text').textContent = txt;
+        bar.style.top = (offset - 10) + 'px';
+    }
+    bar.classList.toggle('show', show);
+    bar.setAttribute('aria-hidden', String(!show));
+}
+
+function closeReadingBar() {
+    const bar = document.getElementById('reading-bar');
+    if (bar) { bar.classList.remove('show'); bar.setAttribute('aria-hidden', 'true'); }
+}
+
+// ── Hero sheet works as a home button ──
+function initHeroHome() {
+    const hero = document.getElementById('hero-home');
+    if (!hero) return;
+    const go = () => {
+        if (document.getElementById('intro-section').classList.contains('hidden')) showHomePage();
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    hero.addEventListener('click', go);
+    hero.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+}
+
+// ── Bottom navigation (phones) ──
+function initBottomNav() {
+    const nav = document.getElementById('bottom-nav');
+    if (!nav) return;
+    nav.addEventListener('click', (e) => {
+        const btn = e.target.closest('.bn-item');
+        if (!btn) return;
+        switch (btn.dataset.nav) {
+            case 'home': showHomePage(); break;
+            case 'subjects': showSubjectPicker('বিষয় বেছে নিন', 'যে বিষয়ের প্রশ্ন বা নোট পড়তে চান', 'browse'); break;
+            case 'search': {
+                const input = document.getElementById('global-search');
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                input?.focus();
+                break;
+            }
+            case 'bookmarks': showBookmarks(); break;
+            case 'syllabus': showSyllabus(); break;
+        }
+    });
+    syncBottomNav();
+}
+
+function syncBottomNav() {
+    const nav = document.getElementById('bottom-nav');
+    if (!nav) return;
+    const vis = id => !document.getElementById(id)?.classList.contains('hidden');
+    let cur = 'home';
+    if (vis('bookmarks-section')) cur = 'bookmarks';
+    else if (vis('syllabus-section')) cur = 'syllabus';
+    else if (!vis('intro-section')) cur = 'subjects';
+    nav.querySelectorAll('.bn-item').forEach(b => {
+        const on = b.dataset.nav === cur;
+        b.classList.toggle('active', on);
+        if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
 }
 
 // ── Language detection: true if text is primarily English/ASCII ──
@@ -927,6 +1079,7 @@ function renderMCQQuestions(questions, container) {
             <div class="mcq-q-header">
                 <span class="q-num-badge mcq-badge">${badgeLabel}</span>
                 <p class="mcq-q-text${isEn ? ' en' : ''}">${cleanQ}</p>
+                <button class="mcq-share" type="button" aria-label="শেয়ার করুন" title="শেয়ার করুন"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
             </div>
             <div class="mcq-options">
                 ${(item.o || []).map((opt, oi) => `
@@ -958,7 +1111,9 @@ function renderMCQQuestions(questions, container) {
             card.querySelector('.mcq-badge')?.classList.remove('hov');
         });
 
-        // Long-press / right-click share
+        // Share: visible button + long-press / right-click
+        const mShare = card.querySelector('.mcq-share');
+        mShare.addEventListener('click', (e) => { e.stopPropagation(); openCtxMenu({ anchorRect: mShare.getBoundingClientRect() }, shareTarget); });
         attachShareHandlers(card.querySelector('.mcq-q-text'), shareTarget);
 
         wrap.appendChild(card);
@@ -1256,7 +1411,8 @@ const SYL_META = {
     ict_education_3rd_paper: { color: 'syl-cyan', label: 'আইসিটি পেপার-৩' },
 };
 
-function showSyllabus() {
+function showSyllabus(fromRoute) {
+    if (fromRoute !== true) { commitView('syllabus'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     hideAllSections();
     const section = document.getElementById('syllabus-section');
     section.classList.remove('hidden');
@@ -1479,20 +1635,26 @@ function refreshAllBookmarkIcons() {
 }
 
 function updateBookmarkBadge() {
-    const badge = document.getElementById('bookmark-count-badge');
-    if (bookmarks.length > 0) {
-        badge.textContent = bookmarks.length;
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
-    }
+    ['bookmark-count-badge', 'bn-badge'].forEach(id => {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        if (bookmarks.length > 0) {
+            badge.textContent = toBengaliNum(bookmarks.length);
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    });
 }
 
-function showBookmarks() {
+function showBookmarks(fromRoute) {
     hideAllSections();
     document.getElementById('bookmarks-section').classList.remove('hidden');
     document.querySelectorAll('#subject-nav button').forEach(btn => btn.classList.remove('active'));
+    currentState = { subject: null, year: null, type: null, noteCategory: null, noteSubject: null, view: 'bookmarks' };
     renderBookmarksList();
+    if (fromRoute !== true) { commitView('bookmarks'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    else syncBottomNav();
 }
 
 function renderBookmarksList() {
@@ -1512,8 +1674,11 @@ function renderBookmarksList() {
         const wrap = document.createElement('div');
         wrap.className = 'q-accordion mb-3';
 
-        const header = document.createElement('button');
+        const header = document.createElement('div');
         header.className = 'q-header';
+        header.setAttribute('role', 'button');
+        header.setAttribute('tabindex', '0');
+        header.setAttribute('aria-expanded', 'false');
         header.innerHTML = `
             <span class="q-num-badge bm-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg></span>
             <div class="flex-1 text-left">
@@ -1543,7 +1708,7 @@ function renderBookmarksList() {
                 sanitizeContent(content);
                 body.appendChild(content);
             } else {
-                const letters = ['ক', 'খ', 'গ', 'ঘ'];
+                const letters = isEnglishText((item.q || '') + ' ' + (item.o || []).join(' ')) ? ['a', 'b', 'c', 'd'] : ['ক', 'খ', 'গ', 'ঘ'];
                 body.innerHTML = `<div class="answer-content">
                     <p><strong>সঠিক উত্তর:</strong> ${letters[item.a]} — ${item.o?.[item.a] || ''}</p>
                     <div class="mcq-options mt-2">
@@ -1556,11 +1721,21 @@ function renderBookmarksList() {
             }
         }
 
+        if (item) {
+            const target = { subject: b.subject, year: String(b.year), type: b.type, idx: b.idx, qText: (item.q || '').replace(/<[^>]*>/g, '') };
+            body.querySelector('.answer-content')?.appendChild(createAnswerActions(target, b.idx));
+            attachShareHandlers(header, target);
+        }
+
         wrap.appendChild(header);
         wrap.appendChild(body);
         header.addEventListener('click', (e) => {
             if (e.target.closest('.bookmark-btn')) return;
             toggleAccordion(header, body);
+        });
+        header.addEventListener('keydown', (e) => {
+            if (e.target !== header) return;
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleAccordion(header, body); }
         });
 
         list.appendChild(wrap);
@@ -1905,55 +2080,146 @@ function applyFontSize() {
 // --------------------------------------------------------------------------
 // 19. Context Menu Share System
 // --------------------------------------------------------------------------
-let ctxMenu, ctxTarget = null;
+let ctxMenu, ctxTarget = null, ctxOpenedAt = 0;
+
+const isPhoneLayout = () => window.matchMedia('(max-width: 640px), (pointer: coarse) and (max-width: 900px)').matches;
 
 function initContextMenu() {
     ctxMenu = document.getElementById('ctx-menu');
+    const backdrop = document.getElementById('share-backdrop');
 
-    // Show native share button if supported
-    if (navigator.share) {
-        document.getElementById('ctx-native-share').style.display = 'flex';
-        document.getElementById('ctx-whatsapp').style.display = 'none';
+    // Native share sheet exists only on secure origins (https / localhost)
+    if (navigator.share) document.getElementById('ctx-native-share').style.display = '';
+
+    // Close on outside click, Escape, resize, or a real scroll on desktop
+    document.addEventListener('click', (e) => {
+        if (!ctxMenu.classList.contains('open')) return;
+        if (ctxMenu.contains(e.target)) return;
+        if (Date.now() - ctxOpenedAt < 350) return;
+        closeCtxMenu();
+    });
+    backdrop.addEventListener('click', () => closeCtxMenu());
+    window.addEventListener('resize', () => closeCtxMenu());
+    window.addEventListener('scroll', () => {
+        if (ctxMenu.classList.contains('open') && !ctxMenu.classList.contains('as-sheet') && Date.now() - ctxOpenedAt > 400) closeCtxMenu();
+    }, { passive: true });
+    document.getElementById('ctx-close').addEventListener('click', () => closeCtxMenu());
+
+    // swipe the sheet down to dismiss
+    let startY = null;
+    ctxMenu.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
+    ctxMenu.addEventListener('touchmove', (e) => {
+        if (startY === null || !ctxMenu.classList.contains('as-sheet')) return;
+        const dy = Math.max(0, e.touches[0].clientY - startY);
+        ctxMenu.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+    ctxMenu.addEventListener('touchend', (e) => {
+        if (startY === null) return;
+        const dy = (e.changedTouches[0]?.clientY ?? startY) - startY;
+        ctxMenu.style.transform = '';
+        startY = null;
+        if (ctxMenu.classList.contains('as-sheet') && dy > 70) closeCtxMenu();
+    });
+
+    const run = (fn) => () => { if (!ctxTarget) return; const t = ctxTarget; closeCtxMenu(); fn(t); };
+
+    document.getElementById('ctx-copy-link').addEventListener('click', run(t =>
+        copyText(buildShareURL(t), '✅ প্রশ্নের লিংক কপি হয়েছে!')));
+
+    document.getElementById('ctx-copy-text').addEventListener('click', run(t =>
+        copyText(shareHeadline(t), '✅ প্রশ্ন কপি হয়েছে!')));
+
+    document.getElementById('ctx-copy-full').addEventListener('click', run(t =>
+        copyText(shareFullText(t), t.type === 'mcq' ? '✅ প্রশ্ন, অপশন ও উত্তর কপি হয়েছে!' : '✅ প্রশ্ন ও উত্তর কপি হয়েছে!')));
+
+    document.getElementById('ctx-whatsapp').addEventListener('click', run(t => {
+        const msg = encodeURIComponent(`${shareHeadline(t)}\n\n${buildShareURL(t)}`);
+        openExternal(`https://wa.me/?text=${msg}`);
+    }));
+
+    document.getElementById('ctx-telegram').addEventListener('click', run(t => {
+        openExternal(`https://t.me/share/url?url=${encodeURIComponent(buildShareURL(t))}&text=${encodeURIComponent(shareHeadline(t))}`);
+    }));
+
+    document.getElementById('ctx-messenger').addEventListener('click', run(t => {
+        const url = buildShareURL(t);
+        if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+            // Messenger app deep link; falls back to copying the link if the app is missing
+            copyText(`${shareHeadline(t)}\n${url}`, '📋 লিংক কপি হয়েছে — Messenger-এ পেস্ট করুন', true);
+            window.location.href = `fb-messenger://share/?link=${encodeURIComponent(url)}`;
+        } else {
+            openExternal(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`);
+        }
+    }));
+
+    document.getElementById('ctx-native-share').addEventListener('click', run(t => {
+        navigator.share({ title: '৫ম সেমিস্টার প্রশ্নোত্তর', text: shareHeadline(t), url: buildShareURL(t) })
+            .catch(err => { if (err && err.name !== 'AbortError') copyText(buildShareURL(t), '✅ লিংক কপি হয়েছে!'); });
+    }));
+}
+
+function openExternal(url) {
+    const w = window.open(url, '_blank', 'noopener');
+    if (!w) window.location.href = url;
+}
+
+// Clipboard that also works on plain-http (e.g. Live Server over Wi-Fi on a phone)
+function copyText(text, okMsg, silent) {
+    const done = () => { if (okMsg) showToast(okMsg); };
+    const fallback = () => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (_) {}
+        ta.remove();
+        if (ok) done(); else if (!silent) showToast('⚠️ কপি করা যায়নি, আবার চেষ্টা করুন');
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+        fallback();
     }
+}
 
-    // Close on outside click / scroll
-    document.addEventListener('click', closeCtxMenu);
-    document.addEventListener('scroll', closeCtxMenu, { passive: true });
-    window.addEventListener('resize', closeCtxMenu);
+function htmlToPlain(html) {
+    const div = document.createElement('div');
+    div.innerHTML = (html || '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(p|h[1-6]|li|tr|div|table|ul|ol)>/gi, '\n')
+        .replace(/<li[^>]*>/gi, '• ')
+        .replace(/<\/t[dh]>/gi, '\t');
+    return div.textContent.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
 
-    // Menu actions
-    document.getElementById('ctx-copy-link').addEventListener('click', () => {
-        if (!ctxTarget) return;
-        const url = buildShareURL(ctxTarget);
-        navigator.clipboard.writeText(url).then(() => showToast('✅ লিংক কপি হয়েছে!'));
-        closeCtxMenu();
-    });
+function shareItem(t) {
+    return allData[t.subject]?.questions?.[t.year]?.[t.type]?.[t.idx] || null;
+}
 
-    document.getElementById('ctx-copy-text').addEventListener('click', () => {
-        if (!ctxTarget) return;
-        const text = ctxTarget.qText;
-        navigator.clipboard.writeText(text).then(() => showToast('✅ প্রশ্ন কপি হয়েছে!'));
-        closeCtxMenu();
-    });
+function shareHeadline(t) {
+    const subj = allData[t.subject]?.name || '';
+    const q = htmlToPlain(shareItem(t)?.q || t.qText).replace(/^([০-৯\d]+)[।.)\s]+/, '');
+    const kind = t.type === 'mcq' ? 'MCQ' : 'প্রশ্ন';
+    return `📘 ${subj} — ${toBengaliNum(t.year)} সাল, ${kind} ${toBengaliNum(t.idx + 1)}\n${q}`;
+}
 
-    document.getElementById('ctx-whatsapp').addEventListener('click', () => {
-        if (!ctxTarget) return;
-        const url = buildShareURL(ctxTarget);
-        const msg = encodeURIComponent(`${ctxTarget.qText.substring(0, 100)}...\n\n${url}`);
-        window.open(`https://wa.me/?text=${msg}`, '_blank');
-        closeCtxMenu();
-    });
-
-    document.getElementById('ctx-native-share').addEventListener('click', () => {
-        if (!ctxTarget) return;
-        const url = buildShareURL(ctxTarget);
-        navigator.share({
-            title: '৫ম সেমিস্টার প্রশ্ন',
-            text: ctxTarget.qText.substring(0, 100) + '...',
-            url
-        }).catch(() => {});
-        closeCtxMenu();
-    });
+function shareFullText(t) {
+    const item = shareItem(t);
+    if (!item) return shareHeadline(t);
+    let body = '';
+    if (t.type === 'mcq') {
+        const isEn = isEnglishText((item.q || '') + ' ' + (item.o || []).join(' '));
+        const L = isEn ? ['a', 'b', 'c', 'd'] : ['ক', 'খ', 'গ', 'ঘ'];
+        body = (item.o || []).map((o, i) => `${L[i]}) ${htmlToPlain(o)}`).join('\n') +
+               `\n\n✅ সঠিক উত্তর: ${L[item.a]}) ${htmlToPlain(item.o?.[item.a])}`;
+    } else {
+        body = '✍️ উত্তর:\n' + htmlToPlain(item.a);
+    }
+    return `${shareHeadline(t)}\n\n${body}\n\n🔗 ${buildShareURL(t)}`;
 }
 
 function buildShareURL(target) {
@@ -1962,51 +2228,127 @@ function buildShareURL(target) {
     params.set('subject', target.subject);
     params.set('year', target.year);
     params.set('type', target.type);
+    if (Number.isInteger(target.idx)) params.set('q', String(target.idx + 1));
     return `${base}#${params.toString()}`;
 }
 
 function openCtxMenu(e, target) {
-    e.preventDefault();
-    e.stopPropagation();
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (ctxMenu.classList.contains('open') && Date.now() - ctxOpenedAt < 600) return; // long-press + contextmenu fire together on Android
     ctxTarget = target;
+    ctxOpenedAt = Date.now();
 
-    // Clamp position within viewport
-    const menuW = 210, menuH = 200;
-    let x = e.clientX || (e.touches?.[0]?.clientX ?? 0);
-    let y = e.clientY || (e.touches?.[0]?.clientY ?? 0);
-    x = Math.min(x, window.innerWidth - menuW - 8);
-    y = Math.min(y, window.innerHeight - menuH - 8);
+    const kind = target.type === 'mcq' ? 'MCQ' : 'প্রশ্ন';
+    document.getElementById('ctx-kicker').textContent = `${allData[target.subject]?.name || ''} · ${toBengaliNum(target.year)} · ${kind} ${toBengaliNum(target.idx + 1)}`;
+    const plain = (target.qText || '').replace(/^([০-৯\d]+)[।.)\s]+/, '').trim();
+    document.getElementById('ctx-q-label').textContent = plain.length > 90 ? plain.substring(0, 90) + '…' : plain;
+    document.getElementById('ctx-copy-full-label').textContent = target.type === 'mcq' ? 'প্রশ্ন, অপশন ও উত্তর কপি করুন' : 'প্রশ্ন ও উত্তর কপি করুন';
 
-    ctxMenu.style.left = x + 'px';
-    ctxMenu.style.top  = y + 'px';
-
-    // Truncate label
-    const label = target.qText.substring(0, 32) + (target.qText.length > 32 ? '…' : '');
-    document.getElementById('ctx-q-label').textContent = label;
-
+    const sheet = isPhoneLayout();
+    ctxMenu.classList.toggle('as-sheet', sheet);
+    ctxMenu.style.transform = '';
+    if (sheet) {
+        ctxMenu.style.left = ''; ctxMenu.style.top = '';
+        document.getElementById('share-backdrop').classList.add('open');
+        document.documentElement.classList.add('sheet-lock');
+        Overlay.opened('share', () => closeCtxMenu(true));
+    } else {
+        ctxMenu.classList.add('measuring');
+        const menuW = ctxMenu.offsetWidth || 300, menuH = ctxMenu.offsetHeight || 320;
+        ctxMenu.classList.remove('measuring');
+        let x = e?.clientX ?? (e?.touches?.[0]?.clientX ?? window.innerWidth / 2);
+        let y = e?.clientY ?? (e?.touches?.[0]?.clientY ?? window.innerHeight / 2);
+        if (e?.anchorRect) {
+            x = e.anchorRect.left;
+            y = e.anchorRect.top - menuH - 10;
+            if (y < 70) y = e.anchorRect.bottom + 10;
+        }
+        x = Math.max(8, Math.min(x, window.innerWidth - menuW - 8));
+        y = Math.max(8, Math.min(y, window.innerHeight - menuH - 8));
+        ctxMenu.style.left = x + 'px';
+        ctxMenu.style.top = y + 'px';
+    }
     ctxMenu.classList.add('open');
 }
 
-function closeCtxMenu() {
-    ctxMenu?.classList.remove('open');
+function closeCtxMenu(fromHistory) {
+    if (!ctxMenu?.classList.contains('open')) return;
+    ctxMenu.classList.remove('open');
+    ctxMenu.style.transform = '';
+    document.getElementById('share-backdrop')?.classList.remove('open');
+    document.documentElement.classList.remove('sheet-lock');
+    if (!fromHistory) Overlay.closedByUI('share');
 }
 
-// Attach long-press / contextmenu on question headers
+// Long-press (touch) or right-click opens the share sheet
 function attachShareHandlers(el, target) {
-    let pressTimer;
-
-    // Desktop: right-click
-    el.addEventListener('contextmenu', (e) => {
-        openCtxMenu(e, target);
-    });
-
-    // Mobile: long press (500ms)
+    let pressTimer = null, sx = 0, sy = 0;
+    el.addEventListener('contextmenu', (e) => openCtxMenu(e, target));
     el.addEventListener('touchstart', (e) => {
-        pressTimer = setTimeout(() => openCtxMenu(e, target), 500);
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(12); openCtxMenu({ clientX: sx, clientY: sy }, target); }, 520);
+    }, { passive: true });
+    el.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        if (Math.abs(t.clientX - sx) > 10 || Math.abs(t.clientY - sy) > 10) clearTimeout(pressTimer);
     }, { passive: true });
     el.addEventListener('touchend', () => clearTimeout(pressTimer), { passive: true });
-    el.addEventListener('touchmove', () => clearTimeout(pressTimer), { passive: true });
+    el.addEventListener('touchcancel', () => clearTimeout(pressTimer), { passive: true });
 }
+
+// --------------------------------------------------------------------------
+// 19b. Overlay history — Android back button closes sheets instead of leaving
+// --------------------------------------------------------------------------
+const Overlay = {
+    stack: [],
+    backPending: false,
+    pendingURL: null,
+    opened(name, closeFn) {
+        if (this.stack.some(o => o.name === name)) return;
+        this.stack.push({ name, closeFn });
+        history.pushState({ ov: name }, '', window.location.href);
+    },
+    closedByUI(name) {
+        const i = this.stack.findIndex(o => o.name === name);
+        if (i === -1) return;
+        this.stack.splice(i, 1);
+        if (history.state && history.state.ov === name) {
+            this.backPending = true;
+            history.back();
+        }
+    },
+    closeTop() {
+        const top = this.stack.pop();
+        if (!top) return false;
+        top.closeFn();
+        return true;
+    }
+};
+
+function routeURL(hashStr) {
+    return window.location.pathname + window.location.search + (hashStr ? '#' + hashStr : '');
+}
+
+function commitURL(hashStr, push) {
+    if (Overlay.backPending) { Overlay.pendingURL = { hashStr, push }; return; }
+    const cur = window.location.hash.replace(/^#/, '');
+    if (cur === hashStr) return;
+    if (push) history.pushState({ v: 1 }, '', routeURL(hashStr));
+    else history.replaceState({ v: 1 }, '', routeURL(hashStr));
+}
+
+window.addEventListener('popstate', () => {
+    if (Overlay.backPending) {
+        Overlay.backPending = false;
+        const p = Overlay.pendingURL; Overlay.pendingURL = null;
+        if (p) commitURL(p.hashStr, p.push);
+        return;
+    }
+    if (Overlay.closeTop()) return;
+    handleHashChange();
+});
 
 // Create rich answer action row (share + read done + print)
 function createAnswerActions(target, idx) {
@@ -2048,8 +2390,7 @@ function createAnswerActions(target, idx) {
     `;
     shareBtn.onclick = (e) => {
         e.stopPropagation();
-        const rect = shareBtn.getBoundingClientRect();
-        openCtxMenu({ clientX: rect.left, clientY: rect.top - 10 }, target);
+        openCtxMenu({ anchorRect: shareBtn.getBoundingClientRect() }, target);
     };
 
     // Print button
@@ -2067,7 +2408,23 @@ function createAnswerActions(target, idx) {
     row.appendChild(readBtn);
     row.appendChild(shareBtn);
     row.appendChild(printBtn);
+    row.appendChild(createCollapseBtn());
     return row;
+}
+
+// "Fold this answer" button at the end of every answer
+function createCollapseBtn() {
+    const btn = document.createElement('button');
+    btn.className = 'action-btn action-collapse';
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg> বন্ধ করুন`;
+    btn.onclick = (e) => {
+        e.stopPropagation();
+        const acc = btn.closest('.q-accordion');
+        const header = acc?.querySelector(':scope > .q-header');
+        const body = acc?.querySelector(':scope > .q-body');
+        if (header && body?.classList.contains('open')) toggleAccordion(header, body);
+    };
+    return btn;
 }
 
 // Print a single question
@@ -2326,31 +2683,12 @@ function navigateQuestion(dir) {
     let nextIdx = activeIdx + dir;
     if (nextIdx < 0) nextIdx = accordions.length - 1;
     if (nextIdx >= accordions.length) nextIdx = 0;
-
-    // Close current
-    if (activeIdx >= 0) {
-        const activeHeader = accordions[activeIdx].querySelector('.q-header');
-        const activeBody = accordions[activeIdx].querySelector('.q-body');
-        activeBody?.classList.remove('open');
-        activeHeader?.classList.remove('active');
-        accordions[activeIdx].classList.remove('is-open');
-    }
-
-    // Open next
-    const nextHeader = accordions[nextIdx].querySelector('.q-header');
-    const nextBody = accordions[nextIdx].querySelector('.q-body');
-    if (nextHeader && nextBody) {
-        nextBody.classList.add('open');
-        nextHeader.classList.add('active');
-        accordions[nextIdx].classList.add('is-open');
-        const stickyBarH = (document.getElementById('top-sticky-bar')?.offsetHeight || 60) + 12;
-        const doScroll = () => {
-            const top = nextHeader.getBoundingClientRect().top + window.scrollY - stickyBarH;
-            window.scrollTo({ top, behavior: 'smooth' });
-        };
-        requestAnimationFrame(doScroll);
-        setTimeout(doScroll, 50);
-    }
+    const header = accordions[nextIdx].querySelector('.q-header');
+    const body = accordions[nextIdx].querySelector('.q-body');
+    if (!header || !body) return;
+    toggleAccordion(header, body, { noScroll: true });
+    const top = header.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
 
 // --------------------------------------------------------------------------
@@ -2412,6 +2750,7 @@ function selectNoteSubject(noteSubjectKey) {
         btn.classList.toggle('active', btn.dataset.key === noteSubjectKey);
     });
     renderNotes();
+    updateHashFromState();
 }
 
 function renderNotes() {
@@ -2430,10 +2769,13 @@ function renderNotes() {
         const wrap = document.createElement('div');
         wrap.className = 'q-accordion mb-3 reveal-on-scroll';
 
-        const header = document.createElement('button');
+        const header = document.createElement('div');
         header.className = 'q-header';
+        header.setAttribute('role', 'button');
+        header.setAttribute('tabindex', '0');
+        header.setAttribute('aria-expanded', 'false');
         header.innerHTML = `
-            <span class="q-num-badge">${idx + 1}</span>
+            <span class="q-num-badge">${isEnglishText(note.title) ? idx + 1 : toBengaliNum(idx + 1)}</span>
             <div class="flex-1 text-left">
                 <div>${note.title}</div>
                 ${(note.date || note.instructor || note.unit) ? `<div class="note-meta">
@@ -2453,11 +2795,18 @@ function renderNotes() {
         content.className = 'answer-content';
         content.innerHTML = note.content;
         sanitizeContent(content);
+        const row = document.createElement('div');
+        row.className = 'answer-actions';
+        row.appendChild(createCollapseBtn());
+        content.appendChild(row);
         body.appendChild(content);
 
         wrap.appendChild(header);
         wrap.appendChild(body);
         header.addEventListener('click', () => toggleAccordion(header, body));
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleAccordion(header, body); }
+        });
 
         display.appendChild(wrap);
     });
@@ -2475,18 +2824,37 @@ function updateHashFromState() {
         params.append('subject', subject);
         if (year) params.append('year', year);
         if (type) params.append('type', type);
+        if (currentState.noteSubject && allData[subject]?.isNoteCategory) params.append('noteSubject', currentState.noteSubject);
     }
-    window.removeEventListener('hashchange', handleHashChange);
-    window.location.hash = params.toString();
-    window.addEventListener('hashchange', handleHashChange);
+    const next = params.toString();
+    // a new screen (another subject / home) becomes a history step; year/type changes replace it
+    commitURL(next, screenKey(window.location.hash) !== screenKey(next));
+    syncBottomNav();
 }
 
-function handleHashChange() {
+function screenKey(hashStr) {
+    const p = new URLSearchParams(String(hashStr || '').replace(/^#/, ''));
+    return p.get('subject') || p.get('view') || '';
+}
+
+function commitView(view) {
+    const next = 'view=' + view;
+    commitURL(next, screenKey(window.location.hash) !== view);
+    syncBottomNav();
+}
+
+function handleHashChange(isInitial) {
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const subject = params.get('subject');
     const year = params.get('year');
     const type = params.get('type');
+    const qNum = parseInt(params.get('q'), 10);
+    const view = params.get('view');
+    closeCtxMenu(true);
+    closeReadingBar();
+    if (!subject && view === 'bookmarks') { showBookmarks(true); return; }
+    if (!subject && view === 'syllabus') { showSyllabus(true); syncBottomNav(); return; }
 
     if (subject && allData[subject]) {
         const subjectData = allData[subject];
@@ -2516,8 +2884,30 @@ function handleHashChange() {
         }
 
         renderFilters();
-        renderQuestions();
+        renderQuestions(qNum > 0 ? () => focusQuestion(qNum - 1) : null);
+        syncBottomNav();
+        if (!isInitial && !(qNum > 0)) window.scrollTo({ top: 0, behavior: 'instant' });
     } else {
-        showHomePage();
+        showHomePage(true);
     }
+}
+
+// Open + highlight one question (used by shared links)
+function focusQuestion(idx) {
+    const display = document.getElementById('question-display');
+    const items = display.querySelectorAll(currentState.type === 'mcq' ? '.mcq-card' : '.q-accordion');
+    const el = items[idx];
+    if (!el) return;
+    el.classList.add('is-visible');
+    if (currentState.type !== 'mcq') {
+        const header = el.querySelector('.q-header');
+        const body = el.querySelector('.q-body');
+        if (header && body && !body.classList.contains('open')) toggleAccordion(header, body, { noScroll: true });
+    }
+    setTimeout(() => {
+        const top = el.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+        el.classList.add('flash-target');
+        setTimeout(() => el.classList.remove('flash-target'), 2200);
+    }, 120);
 }
